@@ -5,8 +5,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    auto A = init_triangular_matrix_k1<double>(4,1);
-    auto id = &A;
+    auto A = init_triangular_matrix_k1<int>(4,2);
     auto dims = A.num_dimensions();
     long cols = A.shape()[1];
     auto shape = A.shape();
@@ -14,7 +13,6 @@ int main(int argc, char *argv[])
     print_t(cout, A);
     cout<<endl;
     auto I = inverse_triangular_square_matrix(A[ boost::indices[range()<cols][range()] ]);
-    id = &I;
     dims = I.num_dimensions();
     shape = I.shape();
     cout<<"I="<<endl;

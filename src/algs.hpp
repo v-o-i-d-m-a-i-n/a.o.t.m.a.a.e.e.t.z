@@ -108,14 +108,13 @@ tensor<T, dims> set_value(tensor<T, dims> A, T value){
 template <typename T>
 matrix<T> init_triangular_matrix_k1(const std::size_t& num_rows, const std::size_t& k)
 {
-	std::size_t nr = num_rows, nc = num_rows-k;
+	std::size_t nr = num_rows, nc = num_rows-k+1;
 	matrix<T> A(extents[nr][nc]);
-	for(std::size_t i=0;i<nr;++i){
-		for(std::size_t j=0;j<nc&&j<=i;++j){
-			A[i][j]=1;
+	for(std::size_t j=0;j<nc;++j){
+        for(std::size_t i=j;i<j+k;++i){
+			A[i][j]=T(-1);
 		}
-	}
-
+    }
 	return A;
 }
 
@@ -129,6 +128,15 @@ matrix<double> inverse_triangular_square_matrix(const matrix_view<double>& A)
 	return inverse_triangular_square_matrix(matrix<double>(A));
 }
 
+matrix<double> inverse_triangular_square_matrix(const matrix<int>& A){
+    return inverse_triangular_square_matrix_real(A);
+}
+
+matrix<double> inverse_triangular_square_matrix(const matrix_view<int>& A)
+{
+	return inverse_triangular_square_matrix(matrix<int>(A));
+}
+
 template <typename T>
 matrix<double> inverse_triangular_square_matrix_real(const matrix<T>& A)
 {
@@ -136,31 +144,38 @@ matrix<double> inverse_triangular_square_matrix_real(const matrix<T>& A)
     long nr = shape[0]; long nc = shape[1];
     assert(nr==nc);
     auto LU_detect = triangular_matrix_assertion(A);
-    matrix<double> LU(A);
+    matrix<double> LU(extents[nr][nc]);
     matrix<double> Inv(extents[nr][nc]);
 
     if (LU_detect=='U'){
     //    LU = permute(LU);
     }
 
-    // Step 1, a(ik) = a(ik)/a(kk)/a(ii) k ∈ [0,i-1]
-    for (long i=0; i<nr; ++i) {
-        for (long k=0; k<i; ++k) {
-            assert(LU[k][k]*LU[i][i]!=0.0);
-            LU[i][k] /= (LU[k][k]*LU[i][i]);
+    // Step 1, a(ik) = a(ik)/a(kk) k ∈ [0,i-1]
+    for (std::size_t i=0; i<nr; ++i) {
+        assert(A[i][i]!=T(0));
+        LU[i][i] = A[i][i];
+        for (std::size_t k=0; k<i; ++k) {
+            LU[i][k] = A[i][k]; LU[i][k] /= LU[k][k];
         }
     }
-    for (long i=0; i<nr; ++i) {
+    
+    for (std::size_t i=0; i<nr; ++i) {
         // Step 2, b(ii) = 1
         Inv[i][i]=1.0;
         // Step 3, b(ij) = -SUM(k=j to i-1)(a(ik)*b(kj)) (j<i)
-        for (long j=0; j<i; ++j) {
-            for (long k=j; k<=i-1; ++k) {
+        for (std::size_t j=0; j<i; ++j) {
+            for (std::size_t k=j; k<=i-1; ++k) {
                 Inv[i][j] -= LU[i][k] * Inv[k][j];
-            }
+            } 
         }
-        // Step 4, b(ii) = b(ii)/a(ii)
-        Inv[i][i]=1.0/A[i][i];
+    }
+
+    // Step 4, b(ij) = b(ij)/a(ii)
+    for (std::size_t i=0; i<nr; ++i) {
+        for (std::size_t j=0; j<=i; ++j) {
+            Inv[i][j] /= LU[i][i];
+        }
     }
 
     if (LU_detect=='U'){
@@ -177,8 +192,8 @@ const char triangular_matrix_assertion(const matrix<T>& mat){
     long nc = shape[1];
     char LU_detect = 'D';
     
-    for (long i=0; i<nr; ++i) {
-        for (long j=0; j<nc; ++j) {
+    for (std::size_t i=0; i<nr; ++i) {
+        for (std::size_t j=0; j<nc; ++j) {
             if (mat[i][j]!=T(0)) {
                 if (i==j) {
                     LU_detect = LU_detect;
