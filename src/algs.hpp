@@ -35,13 +35,19 @@ template <typename T, std::size_t dims>
 tensor<T, dims> set_value(tensor<T, dims> A, T value);
 
 template <typename T>
-matrix<T> init_diagonal_matrix_k1(const std::size_t& num_rows, const std::size_t& k);
+matrix<T> init_triangular_matrix_k1(const std::size_t& num_rows, const std::size_t& k);
+
+template <typename Tin, typename Tout>
+matrix<Tout> inverse_triangular_square_matrix(const matrix<Tin>& A);
+
+template <typename Tin, typename Tout>
+matrix<Tout> inverse_triangular_square_matrix(const matrix_view<Tin>& A);
 
 template <typename T>
-matrix<T> inverse_diagonal_square_matrix(const matrix<T>& A);
+matrix<double> inverse_triangular_square_matrix_real(const matrix<T>& A);
 
 template <typename T>
-matrix<T> inverse_diagonal_square_matrix(const matrix_view<T>& A);
+const char triangular_matrix_assertion(const matrix<T>& mat);
 
 template <typename T, std::size_t dims>
 void print_t(std::ostream& os, const tensor<T,1>& A)
@@ -100,27 +106,95 @@ tensor<T, dims> set_value(tensor<T, dims> A, T value){
 }
 
 template <typename T>
-matrix<T> init_diagonal_matrix_k1(const std::size_t& num_rows, const std::size_t& k)
+matrix<T> init_triangular_matrix_k1(const std::size_t& num_rows, const std::size_t& k)
 {
-	matrix<T> A(extents[num_rows][num_rows-k]);
+	std::size_t nr = num_rows, nc = num_rows-k;
+	matrix<T> A(extents[nr][nc]);
+	for(std::size_t i=0;i<nr;++i){
+		for(std::size_t j=0;j<nc&&j<=i;++j){
+			A[i][j]=1;
+		}
+	}
 
 	return A;
 }
 
-template <typename T>
-matrix<T> inverse_diagonal_square_matrix(const matrix<T>& A)
-{
-    assert(A.shape()[0]==A.shape()[1]);
+matrix<double> inverse_triangular_square_matrix(const matrix<double>& A){
+    return inverse_triangular_square_matrix_real(A);
+}
 
-	auto Inv = matrix<T>(A);
+matrix<double> inverse_triangular_square_matrix(const matrix_view<double>& A)
+{
+    // matrix<double> Inv = inverse_triangular_square_matrix(matrix<double>(A)); 
+	return inverse_triangular_square_matrix(matrix<double>(A));
+}
+
+template <typename T>
+matrix<double> inverse_triangular_square_matrix_real(const matrix<T>& A)
+{
+    auto shape = A.shape();
+    long nr = shape[0]; long nc = shape[1];
+    assert(nr==nc);
+    auto LU_detect = triangular_matrix_assertion(A);
+    matrix<double> LU(A);
+    matrix<double> Inv(extents[nr][nc]);
+
+    if (LU_detect=='U'){
+    //    LU = permute(LU);
+    }
+
+    // Step 1, a(ik) = a(ik)/a(kk)/a(ii) k ∈ [0,i-1]
+    for (long i=0; i<nr; ++i) {
+        for (long k=0; k<i; ++k) {
+            assert(LU[k][k]*LU[i][i]!=0.0);
+            LU[i][k] /= (LU[k][k]*LU[i][i]);
+        }
+    }
+    for (long i=0; i<nr; ++i) {
+        // Step 2, b(ii) = 1
+        Inv[i][i]=1.0;
+        // Step 3, b(ij) = -SUM(k=j to i-1)(a(ik)*b(kj)) (j<i)
+        for (long j=0; j<i; ++j) {
+            for (long k=j; k<=i-1; ++k) {
+                Inv[i][j] -= LU[i][k] * Inv[k][j];
+            }
+        }
+        // Step 4, b(ii) = b(ii)/a(ii)
+        Inv[i][i]=1.0/A[i][i];
+    }
+
+    if (LU_detect=='U'){
+    //    Inv = permute(Inv);
+    }
 
 	return Inv;
 }
 
 template <typename T>
-matrix<T> inverse_diagonal_square_matrix(const matrix_view<T>& A)
-{
-	auto Inv =inverse_diagonal_square_matrix(matrix<T>(A));
-
-	return Inv;
+const char triangular_matrix_assertion(const matrix<T>& mat){
+    auto shape = mat.shape();
+    long nr = shape[0]; 
+    long nc = shape[1];
+    char LU_detect = 'D';
+    
+    for (long i=0; i<nr; ++i) {
+        for (long j=0; j<nc; ++j) {
+            if (mat[i][j]!=T(0)) {
+                if (i==j) {
+                    LU_detect = LU_detect;
+                }else {
+                    if (i>j) {
+                        assert(LU_detect!='U' && "The matrix is not triangle.");
+                        LU_detect = 'L';
+                    }
+                    else {
+                        assert(LU_detect!='L' && "The matrix is not triangle.");
+                        LU_detect = 'U';
+                    }
+                }
+            }
+        }
+    };
+    
+    return LU_detect;
 }
