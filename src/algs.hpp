@@ -113,7 +113,7 @@ matrix<T> init_triangular_matrix_k1(const std::size_t& num_rows, const std::size
 	for (std::size_t j=0;j<nc;++j) {
         for (std::size_t i=j;i<j+k;++i) {
 			A[i][j]=T(-1);
-	}
+        }
     }
 	return A;
 }
@@ -125,7 +125,7 @@ matrix<double> inverse_triangular_square_matrix(const matrix<double>& A){
 matrix<double> inverse_triangular_square_matrix(const matrix_view<double>& A)
 {
     // matrix<double> Inv = inverse_triangular_square_matrix(matrix<double>(A)); 
-	return inverse_triangular_square_matrix(matrix<double>(A));
+    return inverse_triangular_square_matrix(matrix<double>(A));
 }
 
 matrix<double> inverse_triangular_square_matrix(const matrix<int>& A){
@@ -134,7 +134,7 @@ matrix<double> inverse_triangular_square_matrix(const matrix<int>& A){
 
 matrix<double> inverse_triangular_square_matrix(const matrix_view<int>& A)
 {
-	return inverse_triangular_square_matrix(matrix<int>(A));
+    return inverse_triangular_square_matrix(matrix<int>(A));
 }
 
 template <typename T>
