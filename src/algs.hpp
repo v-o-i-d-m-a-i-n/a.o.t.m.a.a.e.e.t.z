@@ -59,7 +59,7 @@ void print_t(std::ostream& os, const tensor<T,1>& A)
     for (i = A.begin(); i != A.end(); ++i) {
         //print(os, *i); //
         os << *i;
-        if (next(i) != A.end()){
+        if (next(i) != A.end()) {
             os << ',';
         }
     }
@@ -91,13 +91,13 @@ tensor<T, dims> set_value(tensor<T, dims> A, T value){
     auto ele = A(idx); //dbg
     std::size_t ii = 0;
     while(ii<ndims){
-        if (idx[ii]<shape[ii]-1){
+        if (idx[ii]<shape[ii]-1) {
             idx[ii]++;
             ele = A(idx);//dbg
             A(idx) = value;
             ele = A(idx);//dbg
             ii=0;
-        }else{
+        } else {
             idx[ii]=0;
             ii++;
         }
@@ -110,10 +110,10 @@ matrix<T> init_triangular_matrix_k1(const std::size_t& num_rows, const std::size
 {
 	std::size_t nr = num_rows, nc = num_rows-k+1;
 	matrix<T> A(extents[nr][nc]);
-	for(std::size_t j=0;j<nc;++j){
-        for(std::size_t i=j;i<j+k;++i){
+	for (std::size_t j=0;j<nc;++j) {
+        for (std::size_t i=j;i<j+k;++i) {
 			A[i][j]=T(-1);
-		}
+	}
     }
 	return A;
 }
@@ -146,18 +146,18 @@ matrix<double> inverse_triangular_square_matrix_real(const matrix<T>& A)
     auto LU_detect = triangular_matrix_assertion(A);
     matrix<double> LU(extents[nr][nc]);
     matrix<double> Inv(extents[nr][nc]);
-
-    if (LU_detect=='U'){
-    //    LU = permute(LU);
-    }
-
-    // Step 1, a(ik) = a(ik)/a(kk) k ∈ [0,i-1]
+	
+	// Step 1, a(ik) = a(ik)/a(kk) k ∈ [0,i-1]
     for (std::size_t i=0; i<nr; ++i) {
         assert(A[i][i]!=T(0));
         LU[i][i] = A[i][i];
         for (std::size_t k=0; k<i; ++k) {
             LU[i][k] = A[i][k]; LU[i][k] /= LU[k][k];
         }
+    }
+
+	if (LU_detect=='U'){
+    //    LU = permute(LU);
     }
     
     for (std::size_t i=0; i<nr; ++i) {
@@ -197,12 +197,11 @@ const char triangular_matrix_assertion(const matrix<T>& mat){
             if (mat[i][j]!=T(0)) {
                 if (i==j) {
                     LU_detect = LU_detect;
-                }else {
+                } else {
                     if (i>j) {
                         assert(LU_detect!='U' && "The matrix is not triangle.");
                         LU_detect = 'L';
-                    }
-                    else {
+                    } else {
                         assert(LU_detect!='L' && "The matrix is not triangle.");
                         LU_detect = 'U';
                     }
