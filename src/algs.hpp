@@ -112,7 +112,7 @@ matrix<T> init_triangular_matrix_k1(const std::size_t& num_rows, const std::size
 	matrix<T> A(extents[nr][nc]);
 	for (std::size_t j=0;j<nc;++j) {
         for (std::size_t i=j;i<j+k;++i) {
-			A[i][j]=T(-1);
+            A[i][j]=T(-1);
         }
     }
 	return A;
@@ -181,8 +181,8 @@ matrix<double> inverse_triangular_square_matrix_real(const matrix<T>& A)
     if (LU_detect=='U'){
     //    Inv = permute(Inv);
     }
-
-	return Inv;
+    
+    return Inv;
 }
 
 template <typename T>
