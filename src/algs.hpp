@@ -29,7 +29,7 @@ template <std::size_t dims>
 using index = array<std::size_t,dims>;
 
 template <typename T, std::size_t dims>
-void print_t(std::ostream& os, const tensor<T,dims>& A);
+void print_t(std::ostream& os, const tensor<T,dims>& A, char method = 1);
 
 template <typename T, std::size_t dims>
 tensor<T, dims> set_value(tensor<T, dims> A, T value);
@@ -50,36 +50,114 @@ template <typename T>
 const char triangular_matrix_assertion(const matrix<T>& mat);
 
 template <typename T, std::size_t dims>
-void print_t(std::ostream& os, const tensor<T,1>& A)
+void print_t(std::ostream& os, const tensor<T,1>& A, char method = 1)
 {
-    using boost::next;
-    typename tensor<T,dims>::const_iterator i;
-    
-    os << "[";
-    for (i = A.begin(); i != A.end(); ++i) {
-        //print(os, *i); //
-        os << *i;
-        if (next(i) != A.end()) {
-            os << ',';
+    if (method==1) {
+        using boost::next;
+        typename tensor<T,dims>::const_iterator i;
+        
+        os << "[";
+        for (i = A.begin(); i != A.end(); ++i) {
+            //print(os, *i); //
+            os << *i;
+            if (next(i) != A.end()) {
+                os << ',';
+            }
+        }
+        os << "]";
+    } else {
+        auto ndims = A.num_dimensions();
+        auto shape = A.shape();
+        index<dims> idx = {};
+        std::size_t i=0, _i;
+        if (ndims>0) {
+            for (_i=0; _i<ndims; ++_i) {
+                os << "[";
+            }
+            _i -= 1;
+            while(true){
+                if (idx[_i]<shape[_i]) {
+                    if (i>0) {
+                        os << std::endl;
+                        for (std::size_t k=0; k<ndims; ++k) {
+                            if (k<ndims-i) {
+                                os << " ";
+                            } else {
+                                os << "[";
+                            }
+                        }
+                    }
+                    os << A(idx) << " ";
+                    i=0;
+                } else {
+                    os << "]";
+                    idx[_i]=0;
+                    ++i;
+                }
+                if (i<ndims) {
+                    _i = ndims-1-i;
+                    idx[_i]++;
+                } else {
+                    break;
+                }
+            }
         }
     }
-    os << "]";
 }
 
 template <typename T, std::size_t dims>
-void print_t(std::ostream& os, const tensor<T,dims>& A)
+void print_t(std::ostream& os, const tensor<T,dims>& A, char method)
 {
-    using boost::next;
-    typename tensor<T,dims>::const_iterator i;
-    
-    os << "[" ;
-    for (i = A.begin(); i != A.end(); ++i) {
-        print_t<T,dims-1>(os, *i);
-        if (next(i) != A.end()){
-            os << ',' << std::endl;
+    if (method==1) {
+        using boost::next;
+        typename tensor<T,dims>::const_iterator i;
+        
+        os << "[" ;
+        for (i = A.begin(); i != A.end(); ++i) {
+            print_t<T,dims-1>(os, *i, 1);
+            if (next(i) != A.end()){
+                os << ',' << std::endl;
+            }
+        }
+        os << "]";
+    } else {
+        auto ndims = A.num_dimensions();
+        auto shape = A.shape();
+        index<dims> idx = {};
+        std::size_t i=0, _i;
+        if (ndims>0) {
+            for (_i=0; _i<ndims; ++_i) {
+                os << "[";
+            }
+            _i -= 1;
+            while(true){
+                if (idx[_i]<shape[_i]) {
+                    if (i>0) {
+                        os << std::endl;
+                        for (std::size_t k=0; k<ndims; ++k) {
+                            if (k<ndims-i) {
+                                os << " ";
+                            } else {
+                                os << "[";
+                            }
+                        }
+                    }
+                    os << A(idx) << " ";
+                    i=0;
+                } else {
+                    os << "]";
+                    idx[_i]=0;
+                    ++i;
+                }
+                if (i<ndims) {
+                    _i = ndims-1-i;
+                    idx[_i]++;
+                } else {
+                    break;
+                }
+            }
         }
     }
-    os << "]";
 }
 
 template <typename T, std::size_t dims>
@@ -108,14 +186,14 @@ tensor<T, dims> set_value(tensor<T, dims> A, T value){
 template <typename T>
 matrix<T> init_triangular_matrix_k1(const std::size_t& num_rows, const std::size_t& k)
 {
-	std::size_t nr = num_rows, nc = num_rows-k+1;
-	matrix<T> A(extents[nr][nc]);
-	for (std::size_t j=0;j<nc;++j) {
+    std::size_t nr = num_rows, nc = num_rows-k+1;
+    matrix<T> A(extents[nr][nc]);
+    for (std::size_t j=0;j<nc;++j) {
         for (std::size_t i=j;i<j+k;++i) {
             A[i][j]=T(-1);
         }
     }
-	return A;
+    return A;
 }
 
 matrix<double> inverse_triangular_square_matrix(const matrix<double>& A){
@@ -146,8 +224,8 @@ matrix<double> inverse_triangular_square_matrix_real(const matrix<T>& A)
     auto LU_detect = triangular_matrix_assertion(A);
     matrix<double> LU(extents[nr][nc]);
     matrix<double> Inv(extents[nr][nc]);
-	
-	// Step 1, a(ik) = a(ik)/a(kk) k ∈ [0,i-1]
+    
+    // Step 1, a(ik) = a(ik)/a(kk) k ∈ [0,i-1]
     for (std::size_t i=0; i<nr; ++i) {
         assert(A[i][i]!=T(0));
         LU[i][i] = A[i][i];
@@ -155,8 +233,8 @@ matrix<double> inverse_triangular_square_matrix_real(const matrix<T>& A)
             LU[i][k] = A[i][k]; LU[i][k] /= LU[k][k];
         }
     }
-
-	if (LU_detect=='U'){
+    
+    if (LU_detect=='U'){
     //    LU = permute(LU);
     }
     
